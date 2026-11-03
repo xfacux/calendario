@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Mi Calendario</title>
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+--bg:#f6f5f1;--card:#fff;--tx:#1c1c1a;--mut:#74726b;--ac:#2f6fed;--acx:#fff;--bd:#e4e2da;--today:#e8f0ff}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#161615;--card:#212120;--tx:#f1f0ec;--mut:#9a988f;--ac:#6b9bff;--acx:#0e0e0d;--bd:#33332f;--today:#1f2a44}}
+:root[data-theme="dark"]{--bg:#161615;--card:#212120;--tx:#f1f0ec;--mut:#9a988f;--ac:#6b9bff;--acx:#0e0e0d;--bd:#33332f;--today:#1f2a44}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--tx);font-family:system-ui,-apple-system,"Segoe UI",sans-serif;min-height:100vh;padding-bottom:70px}
+.wrap{max-width:520px;margin:0 auto;padding:14px}
+.tabs{position:fixed;bottom:0;left:0;right:0;display:flex;background:var(--card);border-top:1px solid var(--bd);padding-bottom:env(safe-area-inset-bottom,0px)}
+.tabs button{flex:1;padding:14px;border:0;background:none;color:var(--mut);font-size:16px;font-weight:600}
+.tabs button.on{color:var(--ac)}
+.head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.head h1{font-size:22px;margin:0;text-transform:capitalize}
+.nav{width:44px;height:44px;border-radius:12px;border:1px solid var(--bd);background:var(--card);color:var(--tx);font-size:20px}
+.nav:disabled{opacity:.3}
+.grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.dow{text-align:center;font-size:12px;color:var(--mut);padding:4px 0}
+.day{aspect-ratio:1;border-radius:12px;border:1px solid var(--bd);background:var(--card);color:var(--tx);font-size:16px;position:relative;padding:0}
+.day.empty{border:0;background:none}
+.day.today{background:var(--today);border-color:var(--ac);font-weight:700}
+.day .dot{position:absolute;bottom:6px;left:50%;transform:translateX(-50%);width:6px;height:6px;border-radius:50%;background:var(--ac)}
+.sheet{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:flex-end;z-index:20}
+.sheet.show{display:flex}
+.panel{background:var(--card);width:100%;max-width:520px;margin:0 auto;border-radius:20px 20px 0 0;padding:18px 16px calc(18px + env(safe-area-inset-bottom,0px));max-height:85vh;overflow:auto}
+.panel h2{margin:0 0 10px;font-size:19px;text-transform:capitalize}
+.row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--bd)}
+.row .t{font-weight:700;color:var(--ac);min-width:54px}
+.row .n{flex:1;word-break:break-word}
+.row .x{border:0;background:none;color:var(--mut);font-size:20px;padding:6px 10px}
+input{font:inherit;color:var(--tx);background:var(--bg);border:1px solid var(--bd);border-radius:12px;padding:12px;width:100%}
+.add{display:flex;gap:8px;margin-top:12px}
+.add input[type=time]{width:130px;flex:none}
+.btn{width:100%;margin-top:10px;padding:14px;border:0;border-radius:12px;background:var(--ac);color:var(--acx);font-size:16px;font-weight:700}
+.btn.sec{background:none;color:var(--mut);margin-top:4px}
+.list .item{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:12px 14px;margin-bottom:8px;display:flex;gap:12px;align-items:center}
+.list .d{min-width:74px;font-weight:700}
+.list .d small{display:block;color:var(--mut);font-weight:500;text-transform:capitalize}
+.list .t{color:var(--ac);font-weight:700;min-width:52px}
+.list .n{flex:1;word-break:break-word}
+.empty-msg{color:var(--mut);text-align:center;margin-top:40px}
+.hide{display:none}
+.cd{display:block;color:var(--mut);font-size:13px;font-weight:500;margin-top:2px}
+.next{background:var(--ac);color:var(--acx);border-radius:16px;padding:12px;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.next .mid{flex:1;text-align:center;min-width:0}
+.next .ar{width:44px;height:44px;border:0;border-radius:50%;background:rgba(255,255,255,.22);color:inherit;font-size:24px;flex:none}
+.next .ar:disabled{opacity:.3}
+.next b{word-break:break-word}
+.next small{opacity:.85;font-size:13px}
+.next b{display:block;font-size:26px;margin:2px 0}
+.next span{font-size:16px}
+.bk{margin-top:24px;padding-top:14px;border-top:1px solid var(--bd)}
+.bk h2{font-size:17px;margin:0 0 4px}
+.bk p{color:var(--mut);font-size:14px;margin:0 0 6px}
+.bk .btn{margin-top:8px}
+.bk .btn.o{background:none;color:var(--ac);border:1px solid var(--ac)}
+#msg{margin-top:10px;font-size:14px;color:var(--mut);text-align:center}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div id="vCal">
+    <div class="head">
+      <button class="nav" id="prev" aria-label="Mes anterior">‹</button>
+      <h1 id="title"></h1>
+      <button class="nav" id="next" aria-label="Mes siguiente">›</button>
+    </div>
+    <div class="grid" id="grid"></div>
+  </div>
+  <div id="vList" class="hide list">
+    <div class="head"><h1>Lista</h1></div>
+    <div id="items"></div>
+    <div class="bk">
+      <h2>Copia de seguridad</h2>
+      <p>Guarda tus eventos en un archivo para no perderlos.</p>
+      <button class="btn" id="bkSave">Guardar copia</button>
+      <button class="btn o" id="bkLoad">Restaurar copia</button>
+      <input type="file" id="bkFile" accept=".json,application/json,text/plain" class="hide">
+      <div id="msg"></div>
+    </div>
+  </div>
+</div>
+<div class="tabs">
+  <button id="tCal" class="on">📅 Calendario</button>
+  <button id="tList">📝 Lista</button>
+</div>
+<div class="sheet" id="sheet">
+  <div class="panel">
+    <h2 id="sTitle"></h2>
+    <div id="sEvents"></div>
+    <div class="add">
+      <input type="time" id="fTime" value="09:00">
+      <input type="text" id="fName" placeholder="Ej: Estudiar" maxlength="80">
+    </div>
+    <button class="btn" id="fAdd">Agregar</button>
+    <button class="btn sec" id="fClose">Cerrar</button>
+  </div>
+</div>
+<script>
+var MIN={y:2026,m:0},MAX={y:2028,m:11};
+var MESES=["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
+var DIAS=["domingo","lunes","martes","miércoles","jueves","viernes","sábado"];
+var events=[];
+try{events=JSON.parse(localStorage.getItem("cal-events")||"[]")}catch(e){events=[]}
+function save(){try{localStorage.setItem("cal-events",JSON.stringify(events))}catch(e){}}
+function pad(n){return String(n).padStart(2,"0")}
+function key(y,m,d){return y+"-"+pad(m+1)+"-"+pad(d)}
+var now=new Date(),todayKey=key(now.getFullYear(),now.getMonth(),now.getDate());
+var cur={y:now.getFullYear(),m:now.getMonth()};
+function clamp(){var v=cur.y*12+cur.m;if(v<MIN.y*12+MIN.m){cur={y:MIN.y,m:MIN.m}}if(v>MAX.y*12+MAX.m){cur={y:MAX.y,m:MAX.m}}}
+clamp();
+var selected=null;
+var $=function(i){return document.getElementById(i)};
+function parse(k){var p=k.split("-");return new Date(+p[0],+p[1]-1,+p[2])}
+function longDate(k){var d=parse(k);return DIAS[d.getDay()]+" "+d.getDate()+" de "+MESES[d.getMonth()]+" de "+d.getFullYear()}
+function renderCal(){
+  $("title").textContent=MESES[cur.m]+" "+cur.y;
+  var v=cur.y*12+cur.m;
+  $("prev").disabled=v<=MIN.y*12+MIN.m;
+  $("next").disabled=v>=MAX.y*12+MAX.m;
+  var g=$("grid");g.innerHTML="";
+  ["L","M","M","J","V","S","D"].forEach(function(x){var e=document.createElement("div");e.className="dow";e.textContent=x;g.appendChild(e)});
+  var first=new Date(cur.y,cur.m,1).getDay();var off=(first+6)%7;
+  var n=new Date(cur.y,cur.m+1,0).getDate();
+  for(var i=0;i<off;i++){var e=document.createElement("div");e.className="day empty";g.appendChild(e)}
+  for(var d=1;d<=n;d++){
+    (function(d){
+      var k=key(cur.y,cur.m,d);
+      var b=document.createElement("button");
+      b.className="day"+(k===todayKey?" today":"");
+      b.textContent=d;
+      if(events.some(function(x){return x.date===k})){var dot=document.createElement("span");dot.className="dot";b.appendChild(dot)}
+      b.onclick=function(){openDay(k)};
+      g.appendChild(b);
+    })(d);
+  }
+}
+function sorted(list){return list.slice().sort(function(a,b){return (a.date+a.time).localeCompare(b.date+b.time)})}
+function renderDay(){
+  var box=$("sEvents");box.innerHTML="";
+  var list=sorted(events.filter(function(x){return x.date===selected}));
+  if(!list.length){var p=document.createElement("div");p.className="empty-msg";p.style.margin="10px 0";p.textContent="Sin eventos este día.";box.appendChild(p)}
+  list.forEach(function(ev){
+    var r=document.createElement("div");r.className="row";
+    r.innerHTML='<span class="t"></span><span class="n"></span><button class="x" aria-label="Borrar">✕</button>';
+    r.children[0].textContent=ev.time;r.children[1].textContent=ev.name;
+    r.children[2].onclick=function(){events=events.filter(function(x){return x.id!==ev.id});save();renderDay();renderCal();renderList()};
+    box.appendChild(r);
+  });
+}
+function openDay(k){selected=k;$("sTitle").textContent=longDate(k);$("fName").value="";renderDay();$("sheet").classList.add("show")}
+function closeDay(){$("sheet").classList.remove("show")}
+$("fClose").onclick=closeDay;
+$("sheet").onclick=function(e){if(e.target===$("sheet"))closeDay()};
+$("fAdd").onclick=function(){
+  var name=$("fName").value.trim();if(!name){$("fName").focus();return}
+  events.push({id:Date.now()+""+Math.random(),date:selected,time:$("fTime").value||"00:00",name:name});
+  save();$("fName").value="";renderDay();renderCal();renderList();
+};
+var nxt=0;
+function countdown(ev){
+  var n=new Date(),t=parse(ev.date),h=ev.time.split(":");
+  t.setHours(+h[0],+h[1],0,0);
+  var ms=t-n;if(ms<0)return "ya pasó";
+  var d0=new Date(n.getFullYear(),n.getMonth(),n.getDate());
+  var days=Math.round((parse(ev.date)-d0)/864e5);
+  var mins=Math.floor(ms/6e4);
+  if(days===0){var hh=Math.floor(mins/60),mm=mins%60;return hh?"en "+hh+" h "+mm+" min":"en "+mm+" min"}
+  if(days===1)return "mañana";
+  return "en "+days+" días";
+}
+function renderList(){
+  var box=$("items");box.innerHTML="";
+  var list=sorted(events.filter(function(x){return x.date>=todayKey}));
+  if(!list.length){box.innerHTML='<div class="empty-msg">No tenés eventos próximos.<br>Tocá un día en el calendario para agregar uno.</div>';return}
+  var ups=list.filter(function(x){return countdown(x)!=="ya pasó"});
+  if(ups.length){
+    if(nxt>=ups.length)nxt=ups.length-1;if(nxt<0)nxt=0;
+    var up=ups[nxt],ud=parse(up.date);
+    var c=document.createElement("div");c.className="next";
+    c.innerHTML='<button class="ar" aria-label="Anterior">‹</button><div class="mid"><small></small><b></b><span></span></div><button class="ar" aria-label="Siguiente">›</button>';
+    var m=c.children[1];
+    m.children[0].textContent=(nxt===0?"Próximo evento":"Evento")+" · "+(nxt+1)+" de "+ups.length;
+    m.children[1].textContent=up.name;
+    m.children[2].textContent=countdown(up)+" · "+ud.getDate()+" "+MESES[ud.getMonth()].slice(0,3)+" · "+up.time;
+    c.children[0].disabled=nxt===0;c.children[2].disabled=nxt>=ups.length-1;
+    c.children[0].onclick=function(){nxt--;renderList()};
+    c.children[2].onclick=function(){nxt++;renderList()};
+    box.appendChild(c)}
+  list.forEach(function(ev){
+    var d=parse(ev.date);
+    var it=document.createElement("div");it.className="item";
+    it.innerHTML='<div class="d"></div><div class="t"></div><div class="n"></div>';
+    it.children[0].innerHTML=d.getDate()+" "+MESES[d.getMonth()].slice(0,3)+"<small></small>";
+    it.children[0].querySelector("small").textContent=ev.date===todayKey?"hoy":DIAS[d.getDay()]+" "+d.getFullYear();
+    it.children[1].textContent=ev.time;
+    it.children[2].textContent=ev.name;
+    var cs=document.createElement("span");cs.className="cd";cs.textContent=countdown(ev);it.children[2].appendChild(cs);
+    box.appendChild(it);
+  });
+}
+$("prev").onclick=function(){cur.m--;if(cur.m<0){cur.m=11;cur.y--}renderCal()};
+$("next").onclick=function(){cur.m++;if(cur.m>11){cur.m=0;cur.y++}renderCal()};
+function tab(w){
+  $("vCal").classList.toggle("hide",w!=="cal");
+  $("vList").classList.toggle("hide",w!=="list");
+  $("tCal").classList.toggle("on",w==="cal");
+  $("tList").classList.toggle("on",w==="list");
+  if(w==="list")renderList();
+}
+$("tCal").onclick=function(){tab("cal")};
+$("tList").onclick=function(){tab("list")};
+
+function msg(t){$("msg").textContent=t}
+$("bkSave").onclick=function(){
+  var txt=JSON.stringify({app:"mi-calendario",events:events});
+  var name="mi-calendario-copia.json";
+  var file=null;
+  try{file=new File([txt],name,{type:"application/json"})}catch(e){}
+  if(file&&navigator.canShare&&navigator.canShare({files:[file]})){
+    navigator.share({files:[file],title:"Copia de Mi Calendario"}).then(function(){msg("Copia lista.")}).catch(function(){msg("Cancelado.")});
+    return;
+  }
+  try{
+    var a=document.createElement("a");a.href=URL.createObjectURL(new Blob([txt],{type:"application/json"}));a.download=name;
+    document.body.appendChild(a);a.click();a.remove();msg("Copia descargada.");return;
+  }catch(e){}
+  if(navigator.clipboard){navigator.clipboard.writeText(txt).then(function(){msg("Copiada al portapapeles. Pegala en una nota o en WhatsApp.")})}
+};
+$("bkLoad").onclick=function(){$("bkFile").click()};
+$("bkFile").onchange=function(){
+  var f=this.files&&this.files[0];if(!f)return;
+  var r=new FileReader();
+  r.onload=function(){
+    try{
+      var d=JSON.parse(r.result);var list=Array.isArray(d)?d:d.events;
+      if(!Array.isArray(list))throw 0;
+      var ids={};events.forEach(function(x){ids[x.id]=1});
+      var add=0;
+      list.forEach(function(x){
+        if(x&&x.date&&x.name&&!ids[x.id]){events.push({id:x.id||Date.now()+""+Math.random(),date:x.date,time:x.time||"00:00",name:String(x.name)});add++}
+      });
+      save();renderCal();renderList();msg("Listo: "+add+" eventos restaurados.");
+    }catch(e){msg("Ese archivo no es una copia válida.")}
+  };
+  r.readAsText(f);this.value="";
+};
+renderCal();renderList();
+setInterval(function(){if(!$("vList").classList.contains("hide"))renderList()},30000);
+</script>
+</body>
+</html>
